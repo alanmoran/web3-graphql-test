@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 
-console.log('Am I serverless?');
+console.log('Am I serverless??');
 
 const alchemyId = process.env.ALCHMEY_KEY;
 const web3 = new Web3(
