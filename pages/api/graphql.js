@@ -1,8 +1,11 @@
 import { ApolloServer, gql, ApolloError } from 'apollo-server-micro'
 import Web3 from "web3";
-import { ABI, vaultAddress} from "../../constants"
+import { ABI, vaultAddress } from "../../constants"
 import * as dotenv from "dotenv";
 dotenv.config();
+
+
+console.log('Am I serverless?');
 
 const alchemyId = process.env.ALCHMEY_KEY;
 const web3 = new Web3(
@@ -24,15 +27,17 @@ const typeDefs = gql`
 `
 
 const resolvers = {
+
   Query: {
     async vaults(parent, args, context) {
-     const vaultInfo = await getVaultInfo();
+      console.log('api hit');
+      const vaultInfo = await getVaultInfo();
       return [vaultInfo]
     },
   },
 }
 
-async function getContract(){
+async function getContract() {
   const vaultContract = new web3.eth.Contract(ABI, vaultAddress);
   return vaultContract
 }
@@ -40,7 +45,7 @@ async function getContract(){
 
 async function getVaultInfo() {
   const vaultContract = await getContract()
-  if(!vaultContract){
+  if (!vaultContract) {
     console.log("no vault contract found..? ")
     throw new ApolloError('no vault contract found..?');
   }
@@ -51,7 +56,7 @@ async function getVaultInfo() {
   const name = await vaultContract.methods.name().call();
   const symbol = await vaultContract.methods.symbol().call();
 
-  return {mgmtFee:mgmtFee,name:name, symbol:symbol}
+  return { mgmtFee: mgmtFee, name: name, symbol: symbol }
 }
 
 
@@ -60,6 +65,7 @@ const apolloServer = new ApolloServer({ typeDefs, resolvers })
 const startServer = apolloServer.start()
 
 export default async function handler(req, res) {
+  console.log('handler');
   res.setHeader('Access-Control-Allow-Credentials', 'true')
   res.setHeader(
     'Access-Control-Allow-Origin',
