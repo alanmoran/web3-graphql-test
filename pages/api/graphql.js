@@ -1,21 +1,59 @@
-import { ApolloServer, gql } from 'apollo-server-micro'
+import { ApolloServer, gql, ApolloError } from 'apollo-server-micro'
+import Web3 from "web3";
+import { ABI, vaultAddress} from "../../constants"
+import * as dotenv from "dotenv";
+dotenv.config();
+
+const alchemyId = process.env.ALCHMEY_KEY;
+const web3 = new Web3(
+  new Web3.providers.HttpProvider(
+    `https://eth-rinkeby.alchemyapi.io/v2/${alchemyId}`
+  )
+);
+
 
 const typeDefs = gql`
   type Query {
-    users: [User!]!
+    vaults: [Vault!]!
   }
-  type User {
-    name: String
+  type Vault {
+    mgmtFee: String,
+    name: String,
+    symbol: String
   }
 `
 
 const resolvers = {
   Query: {
-    users(parent, args, context) {
-      return [{ name: 'Nextjs' }]
+    async vaults(parent, args, context) {
+     const vaultInfo = await getVaultInfo();
+      return [vaultInfo]
     },
   },
 }
+
+async function getContract(){
+  const vaultContract = new web3.eth.Contract(ABI, vaultAddress);
+  return vaultContract
+}
+
+
+async function getVaultInfo() {
+  const vaultContract = await getContract()
+  if(!vaultContract){
+    console.log("no vault contract found..? ")
+    throw new ApolloError('no vault contract found..?');
+  }
+
+  // console.log(vaultContract)
+  console.log("get vault info")
+  const mgmtFee = await vaultContract.methods.managementFee().call();
+  const name = await vaultContract.methods.name().call();
+  const symbol = await vaultContract.methods.symbol().call();
+
+  return {mgmtFee:mgmtFee,name:name, symbol:symbol}
+}
+
 
 const apolloServer = new ApolloServer({ typeDefs, resolvers })
 
